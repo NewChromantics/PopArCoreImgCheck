@@ -1,0 +1,81 @@
+<html>
+<head>
+<body>
+
+<h1>ARCore image-validity test</h1>
+
+<div id="drop-area">
+<form>
+<input type="file" id="File" multiple accept="image/*" onchange="OnSelectedFiles(this.files)">
+<label class="button" for="fileElem">Select some files</label>
+</form>
+</div>
+
+<div id="Result">Results Here</div>
+
+<script>
+
+function OnError(Error)
+{
+	const Div = document.querySelector(`#Result`);
+	Div.innerText = Error;
+}
+
+function OnResult(String)
+{
+	if ( typeof String == typeof {} )
+		String = JSON.stringify( String, null, '\t' );
+		
+	const Div = document.querySelector(`#Result`);
+	Div.innerText = String;
+}
+
+function OnSelectedFiles(Files)
+{
+	//	convert FileList to array
+	Files = Array.from(Files);	
+	
+	OnResult(``);
+	
+	try
+	{
+		UploadFiles(Files).then(OnResult).catch(OnError);
+	}
+	catch(e)
+	{
+		OnError(e);
+	}
+}
+
+async function UploadFile(File)
+{
+	const ImageUploadUrl = `/UploadImage`;
+	//const JpegBytesBlob = new Blob([JpegBytes.buffer], {type: `image/${Format}`});
+	const formData = new FormData();
+	formData.append('Image_jpg',File);
+	const FetchResult = await fetch( ImageUploadUrl, { method: 'POST', body: formData });
+	const ResponseBody = await FetchResult.text();
+	console.log(`ResponseBody=`,ResponseBody);
+	console.log(`FetchResult=`,FetchResult);
+
+	if ( !FetchResult.ok )
+		throw `Upload error ${FetchResult.status}/${FetchResult.statusText}; ${ResponseBody}`;
+	
+	const UploadResult = JSON.parse(ResponseBody);
+	return UploadResult;
+}
+
+async function UploadFiles(Files)
+{
+	//	todo: we could do one after another and collate results...
+	if ( Files.length != 1 )
+		throw `Require only one file, not ${Files.length}`;
+	
+	return await UploadFile(Files[0]);
+}
+
+
+</script>
+
+</body>
+</html>
